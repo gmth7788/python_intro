@@ -1,6 +1,28 @@
 #!/usr/bin/python3
 #coding=utf-8
 
+import openpyxl
+
+def read_excel(file):
+    wb = openpyxl.load_workbook(file)
+    sheet = wb.get_sheet_by_name("Sheet1")
+    for i in range(1,sheet.max_row+1):
+        print(str(i))
+        for j in sheet[str(i)]:
+            print(j.value, end = " ")
+        print("\n")
+
+def new_excel(file, num):
+    wb = openpyxl.load_workbook(file)
+    sheet = wb.get_sheet_by_name("Sheet1")
+    for i in range(2,num+1):
+        sheet[str(i)]
+        print(str(i))
+        for j in sheet[str(i)]:
+            print(j.value, end = " ")
+        print("\n")
+    
+
 
 def str_format():
     title = ("剧名", "剩余票数", "票价", "日期")
@@ -32,4 +54,5 @@ if __name__=="__main__":
     print(a and b)
     print(a or b)
     print(not a)
-    
+
+    read_excel(r"/home/yuquanlu68/aa.xlsx")
