@@ -11,14 +11,14 @@ def read_login_sheet(file):
 
     title = []
     for i in sheet["1"]:
-        print(i.value, end = " ")
+        print(i.value, end=" ")
         title.append(i.value)
     print("\n")
     print(title)
 
     name = []
     for i in sheet["2"]:
-        print(i.value, end = " ")
+        print(i.value, end=" ")
         name.append(i.value)
     print("\n")
     print(name)
@@ -115,6 +115,24 @@ def get_random_birthday():
     d = random.randint(1, 28)
     return "{:04d}{:02d}{:02d}".format(y,m,d)
 
+def get_iso_7064_checksum(idcard):
+    # 校验码
+    checksum = (1,0,-1,9,8,7,6,5,4,3,2)
+
+    # 加权因子
+    weight_coef = (7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2)
+
+    if len(idcard) < 17:
+        return None
+    w = 0
+    for i in range(17):
+        w += int(idcard[i]) * weight_coef[i]
+    r = (12 - w % 11) % 11
+    if r == 10:
+        return idcard[:17]+'x'
+    else:
+        return idcard[:17] + str(r)
+
 def get_random_idcardnumber():
     '''
     :return:返回随机产生的身份证号码，18位
@@ -126,12 +144,13 @@ def get_random_idcardnumber():
     3）顺序码，第十五位到十七位，最后一位男偶女奇
     4）校验码，ISO 7064:1983.MOD 11-2计算校验码
     '''
-    return "{:s}{:s}{:02d}{:01d}{:01d}".format(
+    s = "{:s}{:s}{:02d}{:01d}".format(
         get_random_address(),
         get_random_birthday(),
         random.randint(1,99),
-        random.randint(0,9),
         random.randint(0,9))
+    s = get_iso_7064_checksum(s)
+    return s
 
 
 def create_login_sheet(file, num):
@@ -334,5 +353,5 @@ if __name__=="__main__":
     # print(a or b)
     # print(not a)
 
-    create_login_sheet(r"./user.xlsx", 20000)
+    create_login_sheet(r"D:\wangbin\my_workspace\python_intro\login.xlsx", 20000)
     # read_login_sheet(r"./user.xlsx")
