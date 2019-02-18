@@ -1,0 +1,54 @@
+在shell中执行
+python -m doctest -v test_unnecessary_math.txt
+
+>>> import FuzzBool
+>>> print(FuzzBool.FuzzBool(-0.1))
+0.0
+>>> print(FuzzBool.FuzzBool(0.0))
+0.0
+>>> print(FuzzBool.FuzzBool(0.1))
+0.1
+>>> print(FuzzBool.FuzzBool(0.9))
+0.9
+>>> print(FuzzBool.FuzzBool(1.0))
+1.0
+>>> print(FuzzBool.FuzzBool(1.1))
+0.0
+
+>>> print(FuzzBool.FuzzBool('大'))
+0.0
+>>> print(FuzzBool.FuzzBool('aabc'))
+0.0
+>>> print(FuzzBool.FuzzBool('0.12'))
+0.12
+
+位与
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> fb2 = FuzzBool.FuzzBool(0.2)
+>>> print(fb1 & fb2)
+0.1
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> fb2 = FuzzBool.FuzzBool(0.2)
+>>> fb1 &= fb2
+>>> print(fb1)
+0.1
+
+位或
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> fb2 = FuzzBool.FuzzBool(0.2)
+>>> print(fb1 | fb2)
+0.2
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> fb2 = FuzzBool.FuzzBool(0.2)
+>>> fb1 |= fb2
+>>> print(fb1)
+0.2
+
+eval()
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> repr(FuzzBool.FuzzBool(0.1))
+'FuzzBool(0.1)'
+
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> str(fb1)
+'0.1'
