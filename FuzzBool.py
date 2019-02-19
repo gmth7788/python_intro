@@ -138,10 +138,14 @@ class FuzzBool():
         return self.__value.__format__(format_spec)
 
     # ----------------------------
-    # conjunction()和disjunction()
+    # 两个静态方法：conjunction()和disjunction()
     @staticmethod
     def conjunction(*fuzzies):
         return FuzzBool(min([float(x) for x in fuzzies]))
+
+    @staticmethod
+    def disconjunction(*fuzzies):
+        return FuzzBool(max([float(x) for x in fuzzies]))
 
 
 

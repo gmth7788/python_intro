@@ -52,3 +52,41 @@ eval()
 >>> fb1 = FuzzBool.FuzzBool(0.1)
 >>> str(fb1)
 '0.1'
+
+数据类型转换
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> fb2 = FuzzBool.FuzzBool(0.6)
+>>> bool(fb1)
+False
+>>> bool(fb2)
+True
+>>> int(fb1)
+0
+>>> int(fb2)
+1
+>>> float(fb1)
+0.1
+>>> float(fb2)
+0.6
+
+可哈希运算
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> fb2 = FuzzBool.FuzzBool(0.6)
+>>> print({fb1:'a', fb2:'b'})
+{FuzzBool(0.1): 'a', FuzzBool(0.6): 'b'}
+
+str.format()格式规约
+>>> print("{0}".format(fb1))
+0.1
+>>> print("%.1f" % fb1)
+0.1
+
+
+两个静态方法：conjunction()和disjunction()
+>>> fb1 = FuzzBool.FuzzBool(0.1)
+>>> fb2 = FuzzBool.FuzzBool(0.6)
+>>> print(FuzzBool.FuzzBool.conjunction(fb1, fb2))
+0.1
+>>> print(FuzzBool.FuzzBool.disconjunction(fb1, fb2))
+0.6
+
