@@ -4,6 +4,17 @@
 import openpyxl
 import random
 import time
+import collections
+import bisect
+import math
+import os
+import sys
+
+import functools
+import logging
+import tempfile
+
+import copy
 
 def read_login_sheet(file):
     wb = openpyxl.load_workbook(file)
@@ -345,6 +356,366 @@ def str_format():
                                                  rec[i][3]))
     
 
+def iter_test():
+    L = list(tuple("ABCDEF"))
+    print(L)
+    L[2:5] = ["x", "y"]
+    print(L)
+
+    L = list(tuple("ABCDEF"))
+    L[2:4] = []
+    print(L)
+
+    L = list(tuple("ABCDEF"))
+    del L[2:4]
+    print(L)
+
+
+def grade(score, breakpoints=[60, 70, 80, 90], grades='FDCBA'):
+    # i = bisect.bisect(breakpoints, score)
+    i = bisect.bisect_left(breakpoints, score)
+
+    return grades[i]
+
+
+def fun_add(info):
+    print("fun_add() %s" % info)
+
+def fun_modify(info):
+    print("fun_modify() %s" % info)
+
+def fun_del(info):
+    print("fun_del() %s" % info)
+
+def fun1(fun, param):
+    functions = dict(a=fun_add, m=fun_modify, d=fun_del)
+    functions[fun](param)
+
+
+def iter_fun1(d):
+    for k in sorted(d):
+        yield k, d[k]
+
+def iter_fun2(d):
+    return (((k, d[k]) for k in sorted(d)))
+
+
+def load_modules(targe_path=''):
+    '''
+    【动态导入模块】
+    对程序所在路径所有文件进行迭代；
+    每个以.py为扩展名，且名称中包含'magic'的文件，获取模块名；
+    若模块名是有效标识符，就说明其是一个可用的模块名；
+    若模块名尚未存于sys.modules字典中，则尝试将其导入。
+    :param targe_path:
+    :return:
+    '''
+    modules=[]
+    for name in os.listdir(os.path.dirname(__file__) or '.'):
+        if name.endswith(".py") and "magic" in name.lower():
+            filename = name
+            name = os.path.splitext(name)[0] # 模块名
+            if name.isidentifier() and name not in sys.modules:
+                fh = None
+                try:
+                    fh = open(filename, "r", encoding='utf-8')
+                    code = fh.read()
+                    module = type(sys)(name) # 创建一个新模块
+                    sys.modules[name] = module # 将模块添加到字典中
+                    exec(code, module.__dict__)
+                    modules.append(module)
+                except (EnvironmentError, SyntaxError) as err:
+                    sys.modules.pop(name, None)
+                    print(err)
+                finally:
+                    if fh is not None:
+                        fh.close()
+    return modules
+
+def get_function(module, function_name):
+    '''
+    对模块对象调用getattr()，若不存在所需函数，就产生AttributeError异常；
+    若存在所需函数，就调用hasattr()检查函数是否具备__call__属性，可调用对象都具备__call__属性；
+    若函数可调用，就返回给调用者。
+    :param module:
+    :param function_name:
+    :return:
+    '''
+    function = get_function.cache.get(
+        (module, function_name), None)
+    if function is None:
+        try:
+            function = getattr(module, function_name)
+            if not hasattr(function, "__call__"):
+                # 可调用对象都具备__call__属性
+                raise AttributeError()
+            get_function.cache[module, function_name] = function
+        except AttributeError:
+            function = None
+    return function
+get_function.cache={}
+
+
+
+
+
+
+class A():
+    d1 = None
+    __d2 = None  #共享的类变量
+
+    def __init__(self, d1, d2):
+        self.d1 = d1
+        self.__d2 = d2
+
+    def fun(self, s): #类方法
+        print("fun() %s, %s, %s" %
+              (s, str(self.d1), str(self.__d2)))
+
+    @property
+    def d2(self):
+        return self.__d2
+
+    @d2.setter
+    def d2(self, d):
+        self.__d2 = d
+
+class B():
+    pass
+
+class C(A,B):
+    def fun(self,s):
+        A.fun(self,s)
+        print("C.fun() %s" % s)
+
+class D():
+    __slots__ = ("x", "y")
+    pass
+
+class Point:
+    __slots__ = ("x", "y")
+    def __init__(self, x=0, y=0):
+        self.x = x
+        self.y = y
+
+class Const:
+    def __setattr__(self, key, value):
+        if key in self.__dict__:
+            raise ValueError("cannot change a const attribute")
+        self.__dict__[key] = value
+
+    def __delattr__(self, item):
+        if item in self.__dict__:
+            raise ValueError("cannot delete a const attribute")
+        raise AttributeError("'{0}' object has no attribute '{1}'"
+                             .format(self.__class__.__name__, item))
+
+class Strip:
+    def __init__(self, characters):
+        self.characters = characters
+
+    def __call__(self, string):
+        return string.strip(self.characters)
+
+def make_strip_function(charcters):
+    def strip_function(string):
+        return string.strip(charcters)
+    return strip_function
+
+
+def tag(tag_name):
+    def add_tag(content):
+        return "<{0}>{1}</{0}>".format(tag_name, content)
+    return add_tag
+
+
+
+def makebold(fn):
+    def wrapped():
+        return "<b>" + fn() + "</b>"
+    return wrapped
+
+def makeitalic(fn):
+    def wrapped():
+        return "<i>" + fn() + "</i>"
+    return wrapped
+
+@makebold
+@makeitalic
+def hello():
+    return "hello world"
+
+def timeit(fn):
+    def wrapper():
+        start = time.perf_counter()
+        fn()
+        end = time.perf_counter()
+        print("Time elapsed:{:.3e}s".format(end - start))
+    return wrapper
+
+@timeit
+def foo():
+    print("in foo()")
+
+
+
+#
+# if __debug__: # 调试模式下，全局变量__debug__为True
+#     logger = logging.getLogger("Logger")
+#     logger.setLevel(logging.DEBUG)
+#     handler = logging.FileHandler(os.path.join(
+#         tempfile.gettempdir(), "logged.log"))
+#     logger.addHandler(handler)
+#
+#     def logged(fn):
+#         @functools.wraps(fn)
+#         def wrapper(*args, **kwargs):
+#             log = "called:" + fn.__name__ + "("
+#             log += ",".join(["{0!r}".format(a) for a in args] +
+#                             ["{0!s}={1!r}".format(k,v)
+#                              for k,v in kwargs.items()])
+#             result = exception = None
+#             try:
+#                 result = fn(*args, **kwargs)
+#                 return result
+#             except Exception as err:
+#                 exception = err
+#             finally:
+#                 log += ((")->" + str(result) if exception is None else ") {0}:{1}".format(type(exception), exception)))
+#                 logger.debug(log)
+#                 if exception is not None:
+#                     raise exception
+#             return wrapper
+# else:
+#     def logged(fn):
+#         def wrapper():
+#             fn()
+#         return fn
+
+def logged(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        log = "called:" + fn.__name__ + "("
+        log += ",".join(["{0!r}".format(a) for a in args] +
+                        ["{0!s}={1!r}".format(k,v)
+                         for k,v in kwargs.items()])
+        result = exception = None
+        try:
+            result = fn(*args, **kwargs)
+            return result
+        except Exception as err:
+            exception = err
+        finally:
+            log += ((")->" + str(result) if exception is None else ") {0}:{1}".format(type(exception), exception)))
+            logger.debug(log)
+            if exception is not None:
+                raise exception
+    return wrapper
+
+@logged
+def fun111():
+    print("fun111()")
+
+
+def with_test(file_name):
+    try:
+        with open(file_name) as fi, \
+                open(r'tmp1','w') as fo1, \
+                open(r'tmp2','w') as fo2:
+            for line in fi:
+                print(line)
+                fo1.write("fo1:"+line)
+                fo2.write("fo2:"+line)
+    except EnvironmentError as err:
+        print(err)
+
+def get_id(target):
+    print("*"*10)
+    print(target, id(target))
+    # if hasattr(target, "__iter__"):
+    if isinstance(target, collections.Iterable):
+        for i in iter(target):
+            print(i, id(i))
+
+
+def fun11():
+    lst1 = ['a','b','c']
+    lst2 = [1,2,lst1]
+    lst3 = lst2
+    get_id(lst1)
+    get_id(lst2)
+    get_id(lst3)
+    print("-"*30)
+
+    lst3 = copy.copy(lst2)
+    get_id(lst1)
+    get_id(lst2)
+    get_id(lst3)
+    print("-"*30)
+
+    lst3 = copy.deepcopy(lst2)
+    get_id(lst1)
+    get_id(lst2)
+    get_id(lst3)
+    print("-"*30)
+
+class AtomicList:
+    def __init__(self, alist, shallow_copy=True):
+        self.original = alist
+        self.shallow_copy = shallow_copy
+
+    def __enter__(self):
+        self.modified = (self.original[:] if self.shallow_copy
+                         else copy.deepcopy(self.original))
+        return self.modified
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            self.original[:] = self.modified
+
+def AtomicList_test():
+    items = list(range(10))
+    index = 12
+    print(items)
+    try:
+        with AtomicList(items) as atomic:
+            atomic.append(123456)
+            del atomic[3]
+            atomic[8] =8463
+            atomic[index] = 41843
+    except (AttributeError, IndexError, ValueError) as err:
+        print("no changes applied:", err)
+    print(items)
+
+class Foo(object):
+    """docstring for Foo"""
+
+    def __init__(self, arg=''):
+        super(Foo, self).__init__()
+        self.arg = arg
+
+    def foo(self):
+        print(self)
+        print('foo:', 123)
+
+
+class Descriptor(object):
+    def __init__(self, value):
+        self.value = value
+
+    def __get__(self, instance, owner):
+        print("访问属性")
+        return self.value
+
+    def __set__(self, instance, value):
+        print("设置属性值")
+        self.value = value
+
+class Myclass(object):
+    desc = Descriptor(5)
+
+
+
 if __name__=="__main__":
     # str_format()
     # a = 10
@@ -353,5 +724,116 @@ if __name__=="__main__":
     # print(a or b)
     # print(not a)
 
-    create_login_sheet(r"D:\wangbin\my_workspace\python_intro\login.xlsx", 20000)
+    # 用户登录信息
+    # create_login_sheet(r"D:\wangbin\my_workspace\python_intro\login.xlsx", 20000)
     # read_login_sheet(r"./user.xlsx")
+
+    # SJZTPZ
+    # 设备、电连接器、电缆
+
+    # l =  [grade(score) for score in [33, 99, 77, 70, 89, 90, 100]]
+    # print(l)
+
+    # b = B()
+    # print(dir(b))
+    #
+    # d = D()
+    # print(dir(d))
+    #
+    # point=Point()
+    # print(dir(point))
+
+    # a = A("aa", 12)
+    # a.fun("test")
+    # a._A__d2 = 'AA'
+    # a.fun("test1")
+    # a.d2 = 'ss'  #写属性
+    # print(a.d2)  #读属性
+    # a.fun("test2")
+    # a.d1 = 100
+    # a.fun("test3")
+    # print(dir(A))
+
+    # for i in range(10):
+    #     fun1(random.choice(('a', 'm', 'd')),
+    #          str(random.randrange(0,100)))
+
+    # d = dict(a="add", m="modify", d="del")
+    # it = iter_fun1(d)
+    # print(next(it))
+    # print(next(it))
+    # print(next(it))
+    #
+    # for i in list(iter_fun1(d)):
+    #     print(i)
+    #
+    # for i in tuple(iter_fun1(d)):
+    #     print(i)
+    # modules = load_modules(r'D:\wangbin\my_workspace\python_intro')
+    # if modules is not None:
+    #     for i in modules:
+    #         print(i)
+    #     fun = get_function(modules[0], "get_random_address")
+    #     if fun is not None:
+    #         print("{}".format(fun()))
+    # print("over")
+
+    # print(hello())
+    # foo()
+
+    # logger = logging.getLogger("Logger")
+    # logger.setLevel(logging.DEBUG)
+    # handler = logging.FileHandler(os.path.join(
+    #     tempfile.gettempdir(), "logged.log"))
+    # logger.addHandler(handler)
+    #
+    # fun111()
+
+    # c = Const()
+    # c.name = 'test'
+    # print(c.name)
+    # c.name = 'aaa'  # 不能修改只读属性
+    # del c.name #不能删除只读属性
+    #
+    # strip_punctuation = Strip(",;:.!?")
+    # print(strip_punctuation("Land ahoy!!.;"))
+
+    # strip_punctuation = make_strip_function(",;:.!?")
+    # print(strip_punctuation("Land ahoy!!.;"))
+
+    # add_html = tag("html")
+    # add_head = tag("head")
+    # add_title = tag("title")
+    # add_body = tag("body")
+    # ctx = add_html(add_head(add_title("welcome"))+add_body("嘻嘻哈哈"))
+    # print(ctx)
+
+    # with_test(r"D:\wangbin\my_workspace\python_intro\jmeter.log")
+    # fun11()
+    # AtomicList_test()
+
+    # print(Foo.foo)
+    #
+    # print(Foo().foo)
+    #
+    # print(Foo.foo.__get__)
+
+    #访问类属性
+    # print(Myclass.desc)
+    # print("*"*10)
+    # Myclass.desc = 6
+    # print(Myclass.desc)
+    # print("*"*10)
+
+    #访问实例属性
+    for i in range(10):
+        print(Myclass.desc)
+        myClass = Myclass()
+        print(myClass.desc)
+        myClass.desc = i
+        print(myClass.desc)
+        print('*'*10)
+
+
+
+
