@@ -1,5 +1,5 @@
 在shell中执行
-python -m doctest -v test_unnecessary_math.txt
+python -m doctest -v FuzzBool_testcase.txt
 
 >>> import FuzzBool
 >>> print(FuzzBool.FuzzBool(-0.1))
