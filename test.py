@@ -9,12 +9,31 @@ import bisect
 import math
 import os
 import sys
-
+import re
 import functools
 import logging
 import tempfile
 
 import copy
+
+from ctypes import *
+from ctypes.wintypes import *
+
+HWND_BROADCAST = 0xffff
+WM_SYSCOMMAND = 0x0112
+SC_MONITORPOWER = 0xF170
+MonitorPowerOff = 2
+SW_SHOW = 5
+
+
+def main():
+    windll.user32.PostMessageW(HWND_BROADCAST, WM_SYSCOMMAND,
+                               SC_MONITORPOWER, MonitorPowerOff)
+
+    shell32 = windll.LoadLibrary("shell32.dll");
+    shell32.ShellExecuteW(None, 'open', 'rundll32.exe',
+                          'USER32,LockWorkStation', '', SW_SHOW)
+
 
 def read_login_sheet(file):
     wb = openpyxl.load_workbook(file)
@@ -714,6 +733,53 @@ class Descriptor(object):
 class Myclass(object):
     desc = Descriptor(5)
 
+class MyRange:
+   def __init__(self,n):
+       self.i = 1
+       self.n = n
+
+   def __iter__(self):
+       return self
+
+   def __next__(self):
+       if self.i <= self.n:
+           i = self.i
+           self.i += 1
+           return i
+       else:
+           raise StopIteration()
+
+# URL_RE = re.compile(r''''''href=(?P<quote>['''])(?P<url>[^\1]+?)''''''
+#     r''''''(?P<quote>)''', re.IGNORECASE)
+flags = re.MULTILINE | re.IGNORECASE | re.DOTALL
+
+def coroutine(function):
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        generator = function(*args, **kwargs)
+        next(generator)
+        return generator
+    return wrapper
+
+@coroutine
+def regex_matcher(receiver, regex):
+    while True:
+        text = (yield)
+        for match in regex.finditer(text):
+            receiver.send(match)
+
+
+# @coroutine
+# def reporter():
+#     ignore = frozenset({"style.css", "favicon.png", "index.html"})
+#     while True:
+#         match = (yield)
+#         if match is not None:
+#             groups = match.groupdict()
+#             if "url" in groups and
+
+def coroutine_test():
+    receiver = report()
 
 
 if __name__=="__main__":
@@ -826,14 +892,17 @@ if __name__=="__main__":
     # print("*"*10)
 
     #访问实例属性
-    for i in range(10):
-        print(Myclass.desc)
-        myClass = Myclass()
-        print(myClass.desc)
-        myClass.desc = i
-        print(myClass.desc)
-        print('*'*10)
+    # for i in range(10):
+    #     print(Myclass.desc)
+    #     myClass = Myclass()
+    #     print(myClass.desc)
+    #     myClass.desc = i
+    #     print(myClass.desc)
+    #     print('*'*10)
 
+    # x = MyRange(5)
+    # print([i for i in x])
 
+    main()
 
 
